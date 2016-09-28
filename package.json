@@ -1,0 +1,23 @@
+{
+  "name": "romulus",
+  "version": "1.0.0",
+  "description": "An opinionated assembler for the Nintendo Entertainment System",
+  "main": "index.js",
+  "scripts": {
+    "test": "cucumberjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qbradq/romulus.git"
+  },
+  "keywords": [
+    "nes",
+    "assembler"
+  ],
+  "author": "Norman B. Lancaster",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/qbradq/romulus/issues"
+  },
+  "homepage": "https://github.com/qbradq/romulus#readme"
+}
