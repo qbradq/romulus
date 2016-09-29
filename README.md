@@ -44,4 +44,58 @@ utilities to micro-manage performance when timed code execution matters.
 # Syntax
 The syntax of Romulus resembles C with inline assembly.
 
-## 
+## Comments
+Comments are used to add information to the source code to increase readability
+and understandibility.
+
+### Line comment
+Line comments begin with "//" and run until the end of the current line.
+
+  // This is a single-line comment
+
+### Block comment
+Block comments begin with "/\*" and end with "\*/". Everything between these two
+marks including line breaks are ignored. Block comments may be nested as long
+as the /\* and \*/ pairs match.
+
+  /\* This is a block
+   \* comment
+   \*/
+  /\* Even /\* nested /\* comments \*/ are \*/ supported \*/
+
+## Labels
+Labels identify an address in CPU space by name.
+
+### Positional definition
+This is the traditional form of label definition in most languages. It takes the
+form of an identifier followed by a colon.
+
+  this_is_my_label1234: // Identifiers must start with a letter or underscore.
+
+### Litteral definition
+In this form the absolute value of the label is given as a litteral.
+
+  define ppuStatus $2002 // Cannot reference other labels!
+
+# Formal-ish Gramar
+The following is a semi-formal grammar in no particular format, because I'm
+terrible at BNF. Plus the internal parser uses regular expressions, so why not
+use them as technical documentation as well? Note that the regular expressions
+are in psuedo-code.
+
+  <statement>::=<positional-label>|<line-comment>|<block-comment>|<directive>
+  <positional-label>::=<label>:
+  <line-comment>::=//[^\n]\n
+  <block-comment>::=/*.**/
+  
+  <directive>::=<origin>|<define>
+  <origin>::=origin <number>|<label>
+  <define>::=define <label> <number>
+
+  <label>::=\w[\w\d]*
+
+  <number>::=<hexadecimal>|<decimal>|<octal>|<binary>
+  <hexadecimal>::=0x[\da-fA-F]|$[\da-fA-F]
+  <decimal>::=\d+
+  <octal>::=0\d+
+  <binary>::=0b[01]+|%[01]+
