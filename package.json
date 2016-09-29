@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/qbradq/romulus/issues"
   },
-  "homepage": "https://github.com/qbradq/romulus#readme"
+  "homepage": "https://github.com/qbradq/romulus#readme",
+  "devDependencies": {
+    "mocha": "^3.1.0"
+  }
 }

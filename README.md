@@ -1,3 +1,88 @@
+# Romulus
+Romulus is an opinionated assembler for the Nintendo Entertainment System.
+Opinionated means this assembler does things its own way. Some conventions
+of the past 40 years have been kept. However many features and syntax familiar
+to 6502 hackers are changed or not present and many new features have
+appeared.
+
+Some in the NES dev community will ask, "Why build an assembler no one knows
+how to use? That no one will support? That yada yada yada?" I know they will
+because they asked the same questions the last time I wrote an assembler. The
+simple answer is I am writting this assmebler to meet my own needs. The needs
+of a man. A man in the year 20XX. The current year argument and all that.
+
+With the creative writting out of the way, let's continue to the details.
+
+# Lexical Conventions
+The Romulus language syntax is based on a context-free grammar. This is in
+sharp contrast to most assemblers which change lexical conventions based on
+the current context. This is one source of the differences between Romulus and
+typical assembler syntaxes.
+
+### Preprocessing directives
+Preprocessing directives are instructions to the tokenizer that manipulate the
+token stream in-place. They consist of an identifier that starts with a hash
+mark. Each directive takes zero or more arguments defined by each directive.
+
+  #include "./nes.h"
+
+### Line comment
+A line comment start with two forward slashes and end at the end of the next
+line.
+
+  // This is a line comment
+
+### Block comment
+A block comment begin with a forward slash followed by an asterisk and end with
+and asterisk followed by a forward slash. Block comments may be nested and
+contain line breaks.
+
+  /\* This is a block comment \*/
+  /\* They can contain
+   \* line breaks
+   \*/
+  /\* And /\* can \*/ be nested \*/
+
+### Identifier
+An identifier starts with a letter or underscore and may only contain letters,
+digits, and underscores.
+
+### Keyword
+A keyword is an identifier that is researved by the parser for use.
+
+### Number
+Numbers come in many formats. All of the below examples are equal to 100
+(decimal).
+
+  0x64          // C-style hexadecimal
+  $64           // Traditional hexadecimal
+  100           // Decimal
+  0144          // C-style octal
+  0b01100100    // C-style binary
+  %01100100     // Traditional binary
+
+### String
+Strings are double-quote delimited runs of printable characters and escape
+sequences. An escape sequence is a backslash followed by a single character.
+
+  "This is a string!\n"
+  /\* Escape sequences
+   \* \n    Newline, value 10
+   \* \t    Tab, value 9
+   \* \\    Litteral backslash
+   \* \"    Litteral double quote
+   \* \nnn  Where n is 0-7, outputs the byte represented by nnn base 8
+   \* \xHH  Where H is 0-9a-fA-F, outputs the byte represented by HH base 16
+   \*/
+
+### Operator
+An operator is a character that cannot appear in any other token and has a
+special meaning in and of itself.
+
+  ()[]{};+-*/%&<>.
+
+ 
+
 # romulus
 Romulus is an opinionated assembler for the Nintendo Entertainment System.
 Opinionated means this assembler does things its own way. Some conventions
