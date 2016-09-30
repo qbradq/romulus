@@ -79,9 +79,9 @@ sequences. An escape sequence is a backslash followed by a single character.
 An operator is a character that cannot appear in any other token and has a
 special meaning in and of itself.
 
-  ()[]{};+-*/%&<>.
+  ()[]{},+-*/%&<>.
 
- 
+
 
 # romulus
 Romulus is an opinionated assembler for the Nintendo Entertainment System.
