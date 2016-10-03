@@ -19,7 +19,6 @@ var capabilitiesKeywords = {
 };
 
 function Assembler() {
-    this.emmit = false;
     this.ignoreUnknownLabels = false;
     this.lexer = new Lexer();
     this.tokens = [];
@@ -45,7 +44,38 @@ function Assembler() {
     this.header = null;
     this.prgrom = null;
     this.chrrom = null;
+    this.segment = "PRG";
+    this.prgSegmentLength = 0;
+    this.prgSegmentMax = 0x8000;
+    this.origin = 0x8000;
 }
+
+Assembler.prototype.setEmmitFlag = function(flag) {
+    this.prgrom.emmit(flag);
+    this.chrrom.emmit(flag);
+};
+
+Assembler.prototype.write = function(value) {
+    switch(this.segment) {
+        case "PRG":
+            if(this.prgSegmentLength >= this.prgSegmentMax) {
+                this.error("Code segment overflow");
+            }
+            if(this.origin >= 0x10000) {
+                this.error("Origin overflow");
+            }
+            this.prgrom.write(value);
+            ++this.prgSegmentLength;
+            ++this.origin;
+            break;
+        case "CHR":
+            this.chrrom.write(value);
+            break;
+        default:
+            this.error("Unhandled segment %s", this.segment);
+            break;
+    }
+};
 
 Assembler.prototype.getOutputBuffer = function() {
     var size = this.header.buffer.length +
@@ -275,8 +305,12 @@ Assembler.prototype.compile = function() {
     // Resolve labels
     this.nextPass();
     this.resolveRAMLabels();
+    this.resolveLabelsPass();
+    this.linkSynonyms();
 
     // Generate code
+    this.nextPass();
+    this.generateCodePass();
 };
 
 Assembler.prototype.nextPrecompilePass = function() {
@@ -287,6 +321,16 @@ Assembler.prototype.nextPrecompilePass = function() {
 
 Assembler.prototype.nextPass = function() {
     this.idx = 0;
+    this.segment = "PRG";
+    this.prgSegmentLength = 0;
+    this.prgSegmentMax = 0x8000;
+    this.origin = 0x8000;
+    if(this.prgrom) {
+        this.prgrom.reset();
+    }
+    if(this.chrrom) {
+        this.chrrom.reset();
+    }
 };
 
 Assembler.prototype.includeCompilationPass = function() {
@@ -383,7 +427,7 @@ Assembler.prototype.processCapabilities = function() {
 };
 
 Assembler.prototype.scanLabelPass = function() {
-    this.emmit = false;
+    this.setEmmitFlag(false);
     this.ignoreUnknownLabels = true;
 
     while(!this.endOfStream()) {
@@ -443,8 +487,21 @@ Assembler.prototype.resolveRAMLabels = function() {
                 break;
         }
     }
+};
 
-    // Link all synonyms
+Assembler.prototype.resolveLabelsPass = function() {
+    this.setEmmitFlag(false);
+    this.ignoreUnknownLabels = false;
+
+    while(!this.endOfStream()) {
+        if(!this.statement()) {
+            var token = this.consume();
+            this.error("Unexpected %s", token.type);
+        }
+    }
+};
+
+Assembler.prototype.linkSynonyms = function() {
     for(var name in this.labels) {
         if(!this.labels.hasOwnProperty(name)) {
             continue;
@@ -454,7 +511,19 @@ Assembler.prototype.resolveRAMLabels = function() {
             continue;
         }
         label.value = label.synonym.value;
-    }    
+    }
+};
+
+Assembler.prototype.generateCodePass = function() {
+    this.setEmmitFlag(true);
+    this.ignoreUnknownLabels = false;
+
+    while(!this.endOfStream()) {
+        if(!this.statement()) {
+            var token = this.consume();
+            this.error("Unexpected %s", token.type);
+        }
+    }
 };
 
 Assembler.prototype.immediateValue = function() {
@@ -571,8 +640,70 @@ Assembler.prototype.keyword_capability = function() {
     }
 };
 
+Assembler.prototype.keyword_out = function() {
+    if(!this.consume("keyword", "out")) {
+        return false;
+    }
+
+    var storageToken = this.consume("keyword", "byte") ||
+        this.consume("keyword", "word") ||
+        this.consume("keyword", "triplet") ||
+        this.consume("keyword", "dword");
+    
+    if(!storageToken) {
+        this.error("Expected a storage specifier");
+    }
+
+    var length = 0;
+    switch(storageToken.value) {
+        case "byte":
+            length = 1;
+            break;
+        case "word":
+            length = 2;
+            break;
+        case "triplet":
+            length = 3;
+            break;
+        case "dword":
+            length = 4;
+            break;
+        default:
+            this.error("Unhandled storage specifier %s", storageToken.value);
+            break;
+    }
+
+    var value = this.expectImmediateValue();
+    for(var i = 0; i < length; ++i) {
+        this.write(value & 0xff);
+        value = value >>> 8;
+    }
+
+    return true;
+};
+
+Assembler.prototype.keyword_ascii = function() {
+    if(!this.consume("keyword", "ascii")) {
+        return false;
+    }
+
+    var str = this.expect("string").value;
+    var offset = 0;
+    if(this.consume("operator", "comma")) {
+        offset = this.expectImmediateValue();
+    }
+
+    for(var i = 0; i < str.length; ++i) {
+        this.write(str.charCodeAt(i) + offset);
+    }
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
-    return this.variable();
+    return this.variable() ||
+        this.keyword_out() ||
+        this.keyword_ascii();
 };
 
 Assembler.prototype.variable = function() {

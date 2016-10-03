@@ -5,31 +5,31 @@ module.exports = function() {
         callback(this.asm.setCapability(name, value === "on"));
     });
 
-    this.Given(/^capability "(mapper|prgrom|chrrom|)" is (\d+)$/, function (name, value, callback) {
+    this.Given(/^capability "(mapper|prgrom|chrrom)" is (\d+)$/, function (name, value, callback) {
         callback(this.asm.setCapability(name, parseInt(value, 10)));
     });
 
-    this.Then(/^capability "([^"]*)" should be (\d+)$/,
+    this.When(/^setting capability "([^"]*)" to "([^"]*)"$/,
         function (name, value, callback) {
-        value = parseInt(value, 10);
-        callback(assert(this.asm.getCapability(name) === value,
-            "Expected capability " + name + " to be " + value +
-            " but it was " + this.asm.getCapability(name)));
-    });
-
-    this.Then(/^capability "([^"]*)" should be (true|false)$/,
-        function (name, value, callback) {
-        var cap = this.asm.getCapability(name);
-        callback(assert(cap === (value === "true"),
-            "Expected capability " + name + " to be " + value +
-            " but it was " + cap.toString()));
+        if(value === "on") {
+            value = true;
+        } else if(value === "off") {
+            value = false;
+        } else if(value.match(/^\d+$/)) {
+            value = parseInt(value, 10);
+        }
+        callback(this.asm.setCapability(name, value));
     });
 
     this.Then(/^capability "([^"]*)" should be "([^"]*)"$/,
         function (name, value, callback) {
-        var cap = this.asm.getCapability(name);
-        callback(assert(cap === value,
+        if(value === "true") {
+            value = true;
+        } else if(value === "false") {
+            value = false;
+        }
+        callback(assert(this.asm.getCapability(name) == value,
             "Expected capability " + name + " to be " + value +
-            " but it was " + cap));
+            " but it was " + this.asm.getCapability(name)));
     });
 };

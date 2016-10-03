@@ -263,23 +263,6 @@ required use a single large byte array and address it manually.
 Raw data must often be defined directly within source code. The following
 keywords accomplish this.
 
-### Table keyword
-The table keyword outputs stripped arrays of bytes to the ROM. Unline variable
-arrays the successive byte fields of a table are guaranteed to be in order
-and contingious. The same size keywords that apply to variables apply to
-tables as well however the allocation keywords do not. Note that within a table
-statement label names are always dereferenced.
-
-  // Pointer table
-  table word levelPointers {
-    level1, level2, level3, 0x0000
-  }
-  // Access the table
-  lda levelPointer.a,x
-  sta ptr
-  lda levelPointer.b,x
-  sta ptr+1
-
 ### Out keyword
 The out keyword outputs one data element without a label. The same size
 keywords that apply to variables apply to out statements as well however the
@@ -298,6 +281,23 @@ offset. If given, the offset is applied to every byte in the string.
   ascii "Hello World!", -32
   // Output an unmodified ASCII string
   ascii "Stuff and Junk"
+
+### Table keyword
+The table keyword outputs stripped arrays of bytes to the ROM. Unline variable
+arrays the successive byte fields of a table are guaranteed to be in order
+and contingious. The same size keywords that apply to variables apply to
+tables as well however the allocation keywords do not. Note that within a table
+statement label names are always dereferenced.
+
+  // Pointer table
+  table word levelPointers {
+    level1, level2, level3, 0x0000
+  }
+  // Access the table
+  lda levelPointer.a,x
+  sta ptr
+  lda levelPointer.b,x
+  sta ptr+1
 
 # Compilation
 Compilation occurs in this order:

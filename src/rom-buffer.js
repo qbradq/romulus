@@ -1,5 +1,6 @@
 function RomBuffer(size) {
-    this.buffer = Buffer.alloc(size);
+    this.buffer = new Buffer(size);
+    this.buffer.fill(0);
     this.ofs = 0;
     this.doWrites = true;
 }

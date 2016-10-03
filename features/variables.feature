@@ -3,21 +3,21 @@ Feature: Variables
     I want to researve RAM for use
     So that I can maintain program state
 
-    Scenario: Byte variable
+    Background:
         Given capability "sram" is off
+
+    Scenario: Byte variable
         When compiling the line "byte foo"
         Then the label "foo" should be allocated in the WRAM segment
         And the label "foo.a" should be allocated in the WRAM segment
     
     Scenario: Word variable
-        Given capability "sram" is off
         When compiling the line "word foo"
         Then the label "foo" should be allocated in the WRAM segment
         And the label "foo.a" should be allocated in the WRAM segment
         And the label "foo.b" should be allocated in the WRAM segment
 
     Scenario: Triplet variable
-        Given capability "sram" is off
         When compiling the line "triplet foo"
         Then the label "foo" should be allocated in the WRAM segment
         And the label "foo.a" should be allocated in the WRAM segment
@@ -25,7 +25,6 @@ Feature: Variables
         And the label "foo.c" should be allocated in the WRAM segment
 
     Scenario: Double word variable
-        Given capability "sram" is off
         When compiling the line "dword foo"
         Then the label "foo" should be allocated in the WRAM segment
         And the label "foo.a" should be allocated in the WRAM segment

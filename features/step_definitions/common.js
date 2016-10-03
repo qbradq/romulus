@@ -21,7 +21,7 @@ module.exports = function() {
         callback();
     });
 
-    this.When(/^compiling the line "([^"]*)"$/, function (text, callback) {
+    this.When(/^compiling the line "(.*)"$/, function (text, callback) {
         this.asm.compileString(text);
         callback();
     });

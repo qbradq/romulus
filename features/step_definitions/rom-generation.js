@@ -27,4 +27,36 @@ module.exports = function() {
         }
         callback(null, 'pending');
     });
+
+    this.Then(/^(PRG ROM|CHR ROM|output file) byte 0x([a-fA-F0-9]+) should be 0x([a-fA-F0-9]+)$/,
+        function (which, address, value, callback) {
+        address = parseInt(address, 16);
+        value = parseInt(value, 16);
+        var of;
+        var name = "";
+
+        switch(which) {
+            case "PRG ROM":
+                of = this.asm.prgrom.buffer;
+                name = "PRG ROM";
+                break;
+            case "CHR ROM":
+                of = this.asm.chrrom.buffer;
+                name = "CHR ROM";
+                break;
+            case "output file":
+                of = this.asm.getOutputBuffer();
+                name = "output file";
+                break;
+            default:
+                callback(null, 'pending');
+        }
+        callback(assert.equal(of.readUInt8(address), value,
+            "Expected the " + name + " byte 0x" +
+            ("0000" + address.toString(16)).substr(-4) +
+            " to be 0x" + ("00" + value.toString(16)).substr(-2) +
+            " but found 0x" +
+            ("00" + of.readUInt8(address).toString(16)).substr(-2) +
+            " instead"));
+    });
 };

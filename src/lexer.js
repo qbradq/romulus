@@ -18,7 +18,9 @@ var keywords = {
     "fast": true,
     "static": true,
     "codepage": true,
-    "capability": true
+    "capability": true,
+    "out": true,
+    "ascii": true
 };
 
 var opcodes = {
