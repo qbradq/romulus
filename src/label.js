@@ -1,23 +1,9 @@
-function Label(name, value) {
+function Label(name, value, length, mode, synonym) {
     this.name = name;
     this.value = value;
-    this.offset = 0;
+    this.length = length;
+    this.mode = mode;
+    this.synonym = synonym;
 }
-
-Label.prototype.add = function(offset) {
-    this.offset += offset;
-};
-
-Label.prototype.set = function(value) {
-    this.value = value;
-    this.offset = 0;
-};
-
-Label.prototype.getValue = function() {
-    if(this.value === undefined) {
-        return undefined;
-    }
-    return this.value + this.offset;
-};
 
 module.exports = Label;

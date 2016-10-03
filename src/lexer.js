@@ -1,8 +1,83 @@
 var util = require("util"),
-    Token = require("./token");
+    TokenConstructor = require("./token");
 
 var keywords = {
-    "origin": true
+    "origin": true,
+    "include": true,
+    "flag": true,
+    "on": true,
+    "off": true,
+    "if": true,
+    "not": true,
+    "else": true,
+    "endif": true,
+    "byte": true,
+    "word": true,
+    "triplet": true,
+    "dword": true,
+    "fast": true,
+    "static": true,
+    "codepage": true,
+    "capability": true
+};
+
+var opcodes = {
+    "adc": true,
+    "and": true,
+    "asl": true,
+    "bcc": true,
+    "bcs": true,
+    "beq": true,
+    "bit": true,
+    "bmi": true,
+    "bne": true,
+    "bpl": true,
+    "brk": true,
+    "bvc": true,
+    "bvs": true,
+    "clc": true,
+    "cld": true,
+    "cli": true,
+    "clv": true,
+    "cmp": true,
+    "cpx": true,
+    "cpy": true,
+    "dec": true,
+    "dex": true,
+    "dey": true,
+    "eor": true,
+    "inc": true,
+    "inx": true,
+    "iny": true,
+    "jmp": true,
+    "jsr": true,
+    "lda": true,
+    "ldx": true,
+    "ldy": true,
+    "lsr": true,
+    "nop": true,
+    "ora": true,
+    "pha": true,
+    "php": true,
+    "pla": true,
+    "plp": true,
+    "rol": true,
+    "ror": true,
+    "rti": true,
+    "rts": true,
+    "sbc": true,
+    "sec": true,
+    "sed": true,
+    "sei": true,
+    "sta": true,
+    "stx": true,
+    "sty": true,
+    "tax": true,
+    "tay": true,
+    "tsx": true,
+    "txa": true,
+    "txs": true,
+    "tya": true
 };
 
 var operators = {
@@ -17,10 +92,11 @@ var operators = {
     "-": "minus",
     "*": "asterisk",
     "/": "forward-slash",
-    "&": "ampersand",
+    "#": "octothorpe",
     "<": "left-chevron",
     ">": "right-chevron",
-    ".": "period"
+    ".": "period",
+    ":": "colon"
 };
 
 var whitespaceChars = {
@@ -148,6 +224,7 @@ function Lexer() {
     this.char = 1;
     this.idx = 0;
     this.mode = "NONE";
+    this.tokenStartChar = 0;
 }
 
 Lexer.prototype.error = function() {
@@ -168,35 +245,42 @@ Lexer.prototype.error = function() {
     throw {
         type: "Syntax",
         msg: msg,
-        file: this.fileName,
-        line: this.lineNumber,
+        file: this.file,
+        line: this.line,
         char: this.char,
         message: "Syntax Error:" + this.file + ":" + this.line +
-            "(" + this.char + ") " + msg + "\n" + (new Error()).stack
+            "(" + this.char + ") " + msg,
+        stack: (new Error()).stack
     };
+};
+
+Lexer.prototype.token = function(type, value) {
+    return new TokenConstructor(type, value, this.file, this.line,
+        this.tokenStartChar);
 };
 
 Lexer.prototype.lex = function(file, body) {
     // We pad the body with a newline just to make the lexer easier to write
-    this.startLex(file, body + "\n");
-
-    while(this.body.length > this.idx) {
-        var token = this.token();
-        if(token) {
-            this.tokens.push(token);
-        }
-    }
-};
-
-Lexer.prototype.startLex = function(file, body) {
+    this.body = body + "\n";
     this.file = file;
-    this.body = body;
     this.line = 1;
     this.char = 1;
+    this.tokenStartChar = 0;
     this.idx = 0;
     this.mode = "NONE";
     this.blockCommentDepth = 0;
     this.reprocessLastChar = false;
+    
+    var tokens = [];
+
+    while(this.body.length > this.idx) {
+        var token = this.parseToken();
+        if(token) {
+            tokens.push(token);
+        }
+    }
+    
+    return tokens;
 };
 
 Lexer.prototype.getc = function() {
@@ -217,7 +301,7 @@ Lexer.prototype.eof = function() {
     return false;
 };
 
-Lexer.prototype.token = function() {
+Lexer.prototype.parseToken = function() {
     var startIdx = -1;
     var length = 0;
     var str = [];
@@ -277,7 +361,7 @@ Lexer.prototype.token = function() {
                             startIdx = this.idx - 1;
                             length = 1;
                         } else if(operators.hasOwnProperty(c)) {
-                            return new Token("operator", operators[c]);
+                            return this.token("operator", operators[c]);
                         } else {
                             throw this.error("Unexpected character %s", c);
                         }
@@ -295,7 +379,7 @@ Lexer.prototype.token = function() {
                         break;
                     default:
                         this.reprocessLastChar = true;
-                        return new Token("operator", operators["/"]);
+                        return this.token("operator", operators["/"]);
                 }
                 break;
             case "LINE_COMMENT":
@@ -335,8 +419,11 @@ Lexer.prototype.token = function() {
                     var name = this.body.substr(startIdx, length);
                     if(keywords.hasOwnProperty(name)) {
                         type = "keyword";
+                    } else if(opcodes.hasOwnProperty(name)) {
+                        type = "opcode";
                     }
-                    return new Token(type, name);
+                    this.reprocessLastChar = true;
+                    return this.token(type, name);
                 }
                 break;
             case "LEADING_ZERO":
@@ -360,7 +447,7 @@ Lexer.prototype.token = function() {
                             length = 1;
                         } else {
                             this.reprocessLastChar = true;
-                            return new Token("number", 0);
+                            return this.token("number", 0);
                         }
                         break;
                 }
@@ -373,7 +460,7 @@ Lexer.prototype.token = function() {
                         throw this.error("Expected hexadecimal digits");
                     }
                     this.reprocessLastChar = true;
-                    return new Token("number",
+                    return this.token("number",
                         parseInt(this.body.substr(startIdx, length), 16));
                 }
                 break;
@@ -382,7 +469,7 @@ Lexer.prototype.token = function() {
                     ++length;
                 } else {
                     this.reprocessLastChar = true;
-                    return new Token("number",
+                    return this.token("number",
                         parseInt(this.body.substr(startIdx, length), 10));
                 }
                 break;
@@ -391,7 +478,7 @@ Lexer.prototype.token = function() {
                     ++length;
                 } else {
                     this.reprocessLastChar = true;
-                    return new Token("number",
+                    return this.token("number",
                         parseInt(this.body.substr(startIdx, length), 8));
                 }
                 break;
@@ -403,7 +490,7 @@ Lexer.prototype.token = function() {
                     if(length <= 0) {
                         throw this.error("Expected binary digits");
                     }
-                    return new Token("number",
+                    return this.token("number",
                         parseInt(this.body.substr(startIdx, length), 2));
                 }
                 break;
@@ -413,7 +500,7 @@ Lexer.prototype.token = function() {
                         this.mode = "ESCAPE";
                         break;
                     case "\"":
-                        return new Token("string", str.join(""));
+                        return this.token("string", str.join(""));
                     default:
                         str.push(c);
                         break;

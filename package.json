@@ -4,7 +4,7 @@
   "description": "An opinionated assembler for the Nintendo Entertainment System",
   "main": "index.js",
   "scripts": {
-    "test": "cucumberjs"
+    "test": "mocha && cucumberjs"
   },
   "repository": {
     "type": "git",

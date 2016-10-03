@@ -19,20 +19,13 @@ sharp contrast to most assemblers which change lexical conventions based on
 the current context. This is one source of the differences between Romulus and
 typical assembler syntaxes.
 
-### Preprocessing directives
-Preprocessing directives are instructions to the tokenizer that manipulate the
-token stream in-place. They consist of an identifier that starts with a hash
-mark. Each directive takes zero or more arguments defined by each directive.
-
-  #include "./nes.h"
-
-### Line comment
+## Line comment
 A line comment start with two forward slashes and end at the end of the next
 line.
 
   // This is a line comment
 
-### Block comment
+## Block comment
 A block comment begin with a forward slash followed by an asterisk and end with
 and asterisk followed by a forward slash. Block comments may be nested and
 contain line breaks.
@@ -43,14 +36,18 @@ contain line breaks.
    \*/
   /\* And /\* can \*/ be nested \*/
 
-### Identifier
+## Identifier
 An identifier starts with a letter or underscore and may only contain letters,
-digits, and underscores.
+digits, and underscores. Identifiers are case-sensitive.
 
-### Keyword
+## Keyword
 A keyword is an identifier that is researved by the parser for use.
 
-### Number
+## Opcode
+An opcode is a special keyword that corresponds to one of the 6502 machine
+instructions.
+
+## Number
 Numbers come in many formats. All of the below examples are equal to 100
 (decimal).
 
@@ -61,7 +58,7 @@ Numbers come in many formats. All of the below examples are equal to 100
   0b01100100    // C-style binary
   %01100100     // Traditional binary
 
-### String
+## String
 Strings are double-quote delimited runs of printable characters and escape
 sequences. An escape sequence is a backslash followed by a single character.
 
@@ -75,112 +72,239 @@ sequences. An escape sequence is a backslash followed by a single character.
    \* \xHH  Where H is 0-9a-fA-F, outputs the byte represented by HH base 16
    \*/
 
-### Operator
+## Operator
 An operator is a character that cannot appear in any other token and has a
 special meaning in and of itself.
 
-  ()[]{},+-*/%&<>.
-
-
-
-# romulus
-Romulus is an opinionated assembler for the Nintendo Entertainment System.
-Opinionated means this assembler does things its own way. Some conventions
-of the past 40 years have been kept. However many features and syntax familiar
-to 6502 hackers are changed or not present and many new features have
-appeared.
-
-Some in the NES dev community will ask, "Why build an assembler no one knows
-how to use? That no one will support? That yada yada yada?" I know they will
-because they asked the same questions the last time I wrote an assembler. The
-simple answer is I am writting this assmebler to meet my own needs. The needs
-of a man. A man in the year 20XX. The current year argument and all that.
-
-## Design Philosophy
-The assembler and its syntax follow a design philosophy informed by many years
-of 6502 development in many different assemblers and high level languages for
-a variety of platforms released in North America. Additionally my work in the
-software industry has helped shape my opinions of this delightful platform and
-the needs of a modern day developer targeting it.
-
-The mantra of Romulus is "maintainability". In my experiance I have found
-Maintainability breaks down into many topics. Compliance: can I prove that it
-complies with the contracts given to the user? Testability: can I prove it
-that it works as intended after changes, and that a new feature does not work
-before implementation? Readability: can I easily read the software and its
-documentation? Performance: can I provide a meaningful measure of performance
-in a format that is compariable between itterations?
-
-The design philosophy of Romulus applies not only to the assembler syntax and
-its features but to the assembler itself. Romulus achieves compliance using
-Behavioral Driven Development. Cucumber-JS is used for testing. A straight-
-forward coding style is used to help ensure readability. And an in-built suite
-of performance tests provide repeatable performance metrics.
-
-The assembler syntax of Romulus cannot help achieve compliance. This is a
-behavioral discipline that the developer must achieve for themselves. However
-Romulus provides a simulation and integration layer to provide true testing
-ability for NES developers. This in turn helps enables compliance. Most of the
-syntax and feature changes over more traditional assemblers are to enhance the
-readability of code. The simulation and integration features include
-performance measurement and reporting. Finally the assembler has various
-utilities to micro-manage performance when timed code execution matters.
+  ()[]{},+-\*/%&<>.:
 
 # Syntax
-The syntax of Romulus resembles C with inline assembly.
+The syntax of Romulus ressembles a mixture of C and assembly with no
+semicolons.
 
-## Comments
-Comments are used to add information to the source code to increase readability
-and understandibility.
+## Conditional compilation
+These keywords control how compilation of the source code progresses. These
+functions are implemented as preprocessing macros in C and directives in
+traditional assemblers.
 
-### Line comment
-Line comments begin with "//" and run until the end of the current line.
+### Include keyword
+Reads in the named file and replaces the include statement with the contents
+of the file. If the path given is relative (does not start with "/"), then the
+path is resolved relative to the path of the file that contains the include
+statement. If the path given is absolute (starts with "/"), then that path is
+used. The once keyword can be included to ensure that the file is only ever
+included once during this compilation session.
 
-  // This is a single-line comment
+  include "lib/nes.asm"
+  include once "lib/globals.asm" // Only included if not before
 
-### Block comment
-Block comments begin with "/\*" and end with "\*/". Everything between these two
-marks including line breaks are ignored. Block comments may be nested as long
-as the /\* and \*/ pairs match.
+### Turn on a compilation flag
+Defines a compilation flag as on. This is equivalent to the -f command-line
+option.
 
-  /\* This is a block
-   \* comment
-   \*/
-  /\* Even /\* nested /\* comments \*/ are \*/ supported \*/
+  flag myFlag     // Turn on the myFlag compilation flag
+  flag on myFlag  // Equivalent to the above
+
+### Undefine a compilation flag
+Defines a compilation flag as off. This is equivalent to the -F command-line
+option.
+
+  flag off myFlag // Turn off the myFlag compilation flag
+
+### Inline conditional inclusion
+An if-else construct that ommits the statement swithin the relavent block if
+the controlling expression is false. Note that the else clause is always
+optional. The endif keyword is required.
+
+  if myFlag  // Include my stuff
+    // My stuff
+  else
+    // Other stuff
+  endif
+
+  // Equivalent to the above
+  if not myFlag
+    // Other stuff
+  else
+    // My stuff
+  endif
+
+## Directives
+Compiler directives give directions to the compiler to control code generation.
+Directives are a common feature of traditional assemblers.
+
+### Capabilities
+Set a PCB capability. These describe the capabilities of the PCB which the
+program targets. This does not nessecarily have to be a known PCB.
+The attributes of the PCB can be described individually. However in-built
+macros are provided for most of the known, popular PCBs used in North American
+release titles. For a list of these macros use the command-line option
+--list-pcb-macros.
+
+  capability mapper 0  // Mapper number (0-255)
+  capability busconflict on // Mapper has bus conflicts
+  capability prgrom 2  // Number of 16KB banks of PRG-ROM (1-256)
+  capability chrrom 1  // Number of 8KB banks of CHR-ROM (0 for CHR-RAM) (0-256)
+  capability mirroring horizontal // Horizontal mirroring
+  capability mirroring vertical   // Vertical mirroring
+  capability mirroring fourscreen // Four-screen mirroring with VRAM
+  capability sram on   // Has SRAM (true or false)
+  capability pal on    // Made for PAL systems (off=NTSC)
+  //
+  // Default values (Equivalent to NROM-128)
+  //
+  capability mapper 0
+  capability busconflict off
+  capability prgrom 1
+  capability chrrom 1
+  capability mirroring vertical
+  capability sram off
+  capability pal off
+
+### Data location
+Romulus always generates an iNES version 1 ROM image as output and fills all
+all bytes that did not explicitly get data generated with zeros. This
+simplifies the process of creating a correct ROM image. The data location
+directives allow the programmer to easily place code and data into the desired
+ROM bank.
+
+All of these directives set the output pointer to a location in either the
+program or character section of the ROM image. Note that the iNES header is
+automatically generated.  
+
+The "prgbank" directive sets the output location to the PRG ROM area at the
+start of the indicated 16KB bank.
+
+  prgbank 4  // Output starts 64KB into the PRG ROM area
+
+The "prgofs" directive sets the PRG ROM area offset to an absolute value. If
+using a mapper that uses 8KB PRG banks "prgofs" will need to be used to manage
+code and data segments.
+
+  prgofs 0x010000 // Fourth 16KB bank
+
+The "chrbank" directive sets the output location to the CHR ROM area at the
+start of the indicated 8KB bank.
+
+  prgbank 2  // Output starts 16KB into the CHR ROM area
+
+The "chrofs" directive sets the CHR ROM area offset to an absolute value. If
+trying to use the compiler to manage the location and arrangement of character
+data the "chrofs" directive will almost certainly need to be used.
+
+  chrofs 0x004000 // Second 8KB bank
+
+### Codepage
+Starts a new codepage. A codepage is a segment of memory with a specific base
+address and maximum length. The maximum length of a codepage is 0x8000, or two
+program banks. A codepage is always padded to the maximum length with zeros
+(brk instructions).
+
+  codepage $C000, $4000  // NROM-128 codepage 
+  codepage $8000, $8000  // NROM-256 codepage
+  codepage $A000, $2000  // MMC3 8KB PRG segment
 
 ## Labels
-Labels identify an address in CPU space by name.
+Labels identify addresses within CPU address space. Every time a label is
+referenced it is interpreted as an address rather than a litteral number
+unless it is preceeded by the address litteral opperator (#). Labels are
+defined in a number of ways and for a number of reasons.
 
-### Positional definition
-This is the traditional form of label definition in most languages. It takes the
-form of an identifier followed by a colon.
+### Variables
+A variable definition allocates a portion of RAM for use by the program.
+Some optional modifier keywords are available to control what segment of
+memory the variable is allocated to. The "fast" keyword forces the variable
+into page zero. The "static" keyword forces the variable into SRAM (pages
+$60 through $7F). If no modifier is specified the variable is first fit into
+pages $03 through $07. If this fails and the SRAM is available the variable
+is fit there. If all fitting attempts fail a compilation error will occur.
+Variables will only be put into zero page when specified with the "fast"
+keyword.
 
-  this_is_my_label1234: // Identifiers must start with a letter or underscore.
+Finally there are several keywords that can be used to define a variable.
+They all determine the number of bytes allocated for that particular variable.
+The "byte" keyword allocates one byte, "word" allocates two, "triplet" three,
+and "dword" four. Furthermore an array can be created using bracket syntax.
 
-### Litteral definition
-In this form the absolute value of the label is given as a litteral.
+  // Zero-page variables
+  fast byte frame
+  fast dword timer
+  fast word ptr
+  fast byte temp
+  fast byte[36] ppuCommandBuffer
+  fast word[2] commandPointers
 
-  define ppuStatus $2002 // Cannot reference other labels!
+  // Other variables (will go into either work RAM above $02FF or SRAM)
+  triplet score
+  byte[256] songBuffer
 
-# Formal-ish Gramar
-The following is a semi-formal grammar in no particular format, because I'm
-terrible at BNF. Plus the internal parser uses regular expressions, so why not
-use them as technical documentation as well? Note that the regular expressions
-are in psuedo-code.
+  // Our save data, forced into SRAM
+  static triplet[10] highScores
 
-  <statement>::=<positional-label>|<line-comment>|<block-comment>|<directive>
-  <positional-label>::=<label>:
-  <line-comment>::=//[^\n]\n
-  <block-comment>::=/*.**/
-  
-  <directive>::=<origin>|<define>
-  <origin>::=origin <number>|<label>
-  <define>::=define <label> <number>
+When referencing a variable label that refers to more than one byte there are
+some automatically generated sub-labels that allow referencing the individual
+bytes. They are "a" through "d" corresponding to the four bytes, where "a"
+is the least-significat byte and "d" the most-significat. If no sub-label is
+given the least-significat byte is addressed.
 
-  <label>::=\w[\w\d]*
+  // Dereferencing the bytes of a long variable
+  dword timer
 
-  <number>::=<hexadecimal>|<decimal>|<octal>|<binary>
-  <hexadecimal>::=0x[\da-fA-F]|$[\da-fA-F]
-  <decimal>::=\d+
-  <octal>::=0\d+
-  <binary>::=0b[01]+|%[01]+
+  lda timer.c     // References the third byte of timer.
+
+Arrays are arranged stripped in memory. This means that for an array of words
+the least-significat bytes are allocated to a single array (arrayName.a) and
+the most-significat bytes are allocated to another array (arrayName.b). It is
+important to note that these byte arrays may not be arranged in order, or
+even be near each other in CPU address space. If a non-stripped array is
+required use a single large byte array and address it manually. 
+
+## Data generation
+Raw data must often be defined directly within source code. The following
+keywords accomplish this.
+
+### Table keyword
+The table keyword outputs stripped arrays of bytes to the ROM. Unline variable
+arrays the successive byte fields of a table are guaranteed to be in order
+and contingious. The same size keywords that apply to variables apply to
+tables as well however the allocation keywords do not. Note that within a table
+statement label names are always dereferenced.
+
+  // Pointer table
+  table word levelPointers {
+    level1, level2, level3, 0x0000
+  }
+  // Access the table
+  lda levelPointer.a,x
+  sta ptr
+  lda levelPointer.b,x
+  sta ptr+1
+
+### Out keyword
+The out keyword outputs one data element without a label. The same size
+keywords that apply to variables apply to out statements as well however the
+allocation keywords do not. Note that within an out statement label names are
+always dereferenced.
+
+  // Output some random byte
+  out byte $ff
+
+### Ascii keyword
+The ascii keyword outputs a string of bytes in ASCII format with an optional
+offset. If given, the offset is applied to every byte in the string.
+
+  // Output an ASCII string and adjust it for a CHR ROM that starts with the
+  // printable ASCII characters.
+  ascii "Hello World!", -32
+  // Output an unmodified ASCII string
+  ascii "Stuff and Junk"
+
+# Compilation
+Compilation occurs in this order:
+ 1. include statements are processed recursively until none are left
+ 2. if and flag statements are processed recursively until none are left
+ 3. Macros are expanded recursively
+ 4. capability statements are executed
+ 5. Labels are scanned in a single pass
+ 6. Labels are resolved in a single pass
+ 7. Code is generated
