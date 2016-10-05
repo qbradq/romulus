@@ -3,7 +3,23 @@ var util = require("util"),
     path = require("path"),
     Lexer = require("./lexer"),
     Label = require("./label"),
-    RomBuffer = require("./rom-buffer");
+    RomBuffer = require("./rom-buffer"),
+    opcodes = require("./opcodes");
+
+var addressingModeNames = [
+    "Implied",
+    "Immediate",
+    "Zeropage",
+    "Zeropage,X",
+    "Zeropage,Y",
+    "Absolute",
+    "Absolute,X",
+    "Absolute,Y",
+    "Indirect",
+    "Indexed Indirect",
+    "Indirect Indexed",
+    "Relative"
+]
 
 var includeCompilationKeywords = {
     "include": true
@@ -147,6 +163,18 @@ Assembler.prototype.registerLabel = function(label) {
 Assembler.prototype.getLabel = function(name) {
     var labelName = this.resolveLabelScope(name);
     return this.labels[labelName];
+};
+
+Assembler.prototype.resolveLabel = function(name) {
+    var label = this.getLabel(name);
+    if(!label) {
+        if(this.ignoreUnknownLabels) {
+            return 0x80;
+        } else {
+            this.error("Unresolved label %s", name);
+        }
+    }
+    return label;
 };
 
 Assembler.prototype.setCapability = function(name, value) {
@@ -554,6 +582,19 @@ Assembler.prototype.expectImmediateValue = function() {
     return value;
 };
 
+Assembler.prototype.addressOrLabel = function() {
+    var label = this.consume("identifier");
+    if(label) {
+        return this.resolveLabel(label.name);
+    }
+
+    if(!this.consume("operator", "asterisk")) {
+        return undefined;
+    }
+
+    return this.expectImmediateValue();
+};
+
 Assembler.prototype.keyword_flag = function() {
     var mode = "set";
 
@@ -791,7 +832,8 @@ Assembler.prototype.statement = function() {
     return this.variable() ||
         this.keyword_out() ||
         this.keyword_ascii() ||
-        this.keyword_table();
+        this.keyword_table() ||
+        this.opcode();
 };
 
 Assembler.prototype.variable = function() {
@@ -860,6 +902,130 @@ Assembler.prototype.variable = function() {
             baseLabel.synonym = label;
         }
         this.registerLabel(label);
+    }
+
+    return true;
+};
+
+Assembler.prototype.opcode = function() {
+    var opcode = this.consume("opcode");
+    if(!opcode) {
+        return false;
+    }
+    opcode = opcode.value;
+    var opcodeData = opcodes[opcode];
+    if(!opcodeData) {
+        this.error("Unsupported opcode %s", opcode);
+    }
+
+    var addressingMode = 0;
+    var value;
+    value = this.immediateValue();
+    if(value !== undefined) {
+        addressingMode = 1;
+    } else {
+        
+    }
+    if(value === undefined) {
+        value = this.addressOrLabel();
+        if(value !== undefined) {
+            if(this.consume("operator", "comma")) {
+                if(this.consume("identifier", "x")) {
+                    if(value < 0x0100) {
+                        addressingMode = 3;
+                    } else {
+                        addressingMode = 6;
+                    }
+                } else if(this.consume("identifier", "y")) {
+                    if(value < 0x0100) {
+                        addressingMode = 4;
+                    } else {
+                        addressingMode = 7;
+                    }
+                } else {
+                    this.error("Expected either X or Y index");
+                }
+            } else {
+                if(value < 0x0100) {
+                    addressingMode = 2;
+                } else {
+                    addressingMode = 5;
+                }
+            }
+        }
+    }
+    if(value === undefined) {
+        if(this.consume("operator", "left-parenthesis")) {
+            value = this.addressOrLabel();
+            if(value !== undefined) {
+                if(this.consume("operator", "comma")) {
+                    this.expect("identifier", "x");
+                    this.expect("operator", "right-parenthesis");
+                    if(value < 0x0100) {
+                        addressingMode = 9;                        
+                    } else {
+                        this.error("Only zeropage addresses can be used for indexed indirect mode");
+                    }
+                } else {
+                    this.expect("operator", "right-parenthesis");
+                    if(this.consume("operator", "comma")) {
+                        this.expect("identifier", "y");
+                        if(value < 0x0100) {
+                            addressingMode = 10;                        
+                        } else {
+                            this.error("Only zeropage addresses can be used for indirect indexed mode");
+                        }
+                    } else {
+                        addressingMode = 8;
+                    }
+                }
+            }
+        }
+    }
+    if(value === undefined) {
+        this.error("Expected a valid addressing mode");
+    }
+
+    var opcodeByte = opcodeData[addressingMode];
+    if(opcodeByte === null) {
+        if(addressingMode >= 2 &&
+            addressingMode <= 4) {
+            addressingMode += 3;
+        }
+    }
+    if(opcodeByte === null &&
+        addressingMode === 5) {
+        addressingMode = 11;
+    }
+    if(opcodeByte === null) {
+        this.error("Opcode %s does not support addressing mode %s",
+            opcode, addressingModeNames[addressingMode]);
+    }
+
+    switch(addressingMode) {
+        case 0:
+            this.write(opcodeByte);
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 9:
+        case 10:
+            this.write(opcodeByte);
+            this.write(value);
+            break;
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+            this.write(opcodeByte);
+            this.write(value);
+            this.write(value >>> 8);
+            break;
+        default:
+            this.error("Unhandled addressing mode");
+            break;
     }
 
     return true;
