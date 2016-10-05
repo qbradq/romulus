@@ -19,6 +19,7 @@ var capabilitiesKeywords = {
 };
 
 function Assembler() {
+    this.pass = "";
     this.ignoreUnknownLabels = false;
     this.lexer = new Lexer();
     this.tokens = [];
@@ -334,6 +335,7 @@ Assembler.prototype.nextPass = function() {
 };
 
 Assembler.prototype.includeCompilationPass = function() {
+    this.pass = "include";
     var ret = 0;
 
     while(true) {
@@ -353,6 +355,8 @@ Assembler.prototype.includeCompilationPass = function() {
 };
 
 Assembler.prototype.conditionalCompilationPass = function() {
+    this.pass = "conditional";
+
     while(true) {
         var token = this.consume();
         if(!token) {
@@ -368,6 +372,8 @@ Assembler.prototype.conditionalCompilationPass = function() {
 };
 
 Assembler.prototype.capabilitiesPass = function() {
+    this.pass = "capabilities";
+
     while(true) {
         var token = this.consume();
         if(!token) {
@@ -427,6 +433,8 @@ Assembler.prototype.processCapabilities = function() {
 };
 
 Assembler.prototype.scanLabelPass = function() {
+    this.pass = "label";
+
     this.setEmmitFlag(false);
     this.ignoreUnknownLabels = true;
 
@@ -467,7 +475,7 @@ Assembler.prototype.resolveRAMLabels = function() {
                 label.value = this.sramofs;
                 this.sramofs += label.length;
                 break;
-            case "memory":
+            case "ram":
                 if(this.wramofs + label.length > 0x0800) {
                     if(this.getCapability("sram")) {
                         if(this.sramofs + label.length > 0x8000) {
@@ -476,7 +484,7 @@ Assembler.prototype.resolveRAMLabels = function() {
                         label.value = this.sramofs;
                         this.sramofs += label.length;
                     } else {
-                        this.error("Unable to allocate memory space for variable %s", label.name);
+                        this.error("Unable to allocate ram space for variable %s", label.name);
                     }
                 }
                 label.value = this.wramofs;
@@ -490,6 +498,8 @@ Assembler.prototype.resolveRAMLabels = function() {
 };
 
 Assembler.prototype.resolveLabelsPass = function() {
+    this.pass = "resolve";
+
     this.setEmmitFlag(false);
     this.ignoreUnknownLabels = false;
 
@@ -515,6 +525,8 @@ Assembler.prototype.linkSynonyms = function() {
 };
 
 Assembler.prototype.generateCodePass = function() {
+    this.pass = "code";
+
     this.setEmmitFlag(true);
     this.ignoreUnknownLabels = false;
 
@@ -700,10 +712,86 @@ Assembler.prototype.keyword_ascii = function() {
     return true;
 };
 
+Assembler.prototype.keyword_table = function() {
+    if(!this.consume("keyword", "table")) {
+        return false;
+    }
+
+    var storageToken = this.consume("keyword", "byte") ||
+        this.consume("keyword", "word") ||
+        this.consume("keyword", "triplet") ||
+        this.consume("keyword", "dword");
+    
+    if(!storageToken) {
+        this.error("Expected a storage specifier");
+    }
+
+    var elementLength = 0;
+    switch(storageToken.value) {
+        case "byte":
+            elementLength = 1;
+            break;
+        case "word":
+            elementLength = 2;
+            break;
+        case "triplet":
+            elementLength = 3;
+            break;
+        case "dword":
+            elementLength = 4;
+            break;
+        default:
+            this.error("Unhandled storage specifier %s", storageToken.value);
+            break;
+    }
+
+    var name = this.expect("identifier").value;
+    this.expect("operator", "left-brace");
+    var elements = [];
+    while(true) {
+        elements.push(this.expectImmediateValue());
+        if(!this.consume("operator", "comma")) {
+            break;
+        }
+    }
+    this.expect("operator", "right-brace");
+
+    // Generate data
+    var tableStartAddr = this.origin;
+    for(var i = 0; i < elementLength; ++i) {
+        for(var j = 0; j < elements.length; ++j) {
+            this.write(elements[j] & 0xff);
+            elements[j] = elements[j] >>> 8;
+        }
+    }
+
+    // Generate labels
+    if(this.pass !== "label") {
+        return true;
+    }
+
+    var length = elements.length;
+    var baseLabel = new Label(name, tableStartAddr, length, "rom");
+    this.registerLabel(baseLabel);
+
+    for(var i = 0; i < elementLength; ++i) {
+        var char = String.fromCharCode(97 + i);
+        var label = new Label(this.joinScope(name, char),
+            tableStartAddr + i * length, length, "rom", undefined);
+        if(i === 0) {
+            baseLabel.synonym = label;
+        }
+        this.registerLabel(label);
+    }
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
     return this.variable() ||
         this.keyword_out() ||
-        this.keyword_ascii();
+        this.keyword_ascii() ||
+        this.keyword_table();
 };
 
 Assembler.prototype.variable = function() {
@@ -727,7 +815,7 @@ Assembler.prototype.variable = function() {
     }
 
     if(mode === null) {
-        mode = "memory";
+        mode = "ram";
     }
 
     var numberOfLabels = 0;
@@ -756,7 +844,12 @@ Assembler.prototype.variable = function() {
     }
 
     var name = this.expect("identifier").value;
-     var baseLabel = new Label(name, undefined, length, mode);
+
+    if(this.pass !== "label") {
+        return true;
+    }
+
+    var baseLabel = new Label(name, undefined, length, mode);
     this.registerLabel(baseLabel);
 
     for(var i = 0; i < numberOfLabels; ++i) {

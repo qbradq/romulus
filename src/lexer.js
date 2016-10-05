@@ -20,7 +20,8 @@ var keywords = {
     "codepage": true,
     "capability": true,
     "out": true,
-    "ascii": true
+    "ascii": true,
+    "table": true
 };
 
 var opcodes = {

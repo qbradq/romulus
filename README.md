@@ -194,6 +194,8 @@ data the "chrofs" directive will almost certainly need to be used.
 
   chrofs 0x004000 // Second 8KB bank
 
+TODO - Write feature tests
+
 ### Codepage
 Starts a new codepage. A codepage is a segment of memory with a specific base
 address and maximum length. The maximum length of a codepage is 0x8000, or two
@@ -203,6 +205,8 @@ program banks. A codepage is always padded to the maximum length with zeros
   codepage $C000, $4000  // NROM-128 codepage 
   codepage $8000, $8000  // NROM-256 codepage
   codepage $A000, $2000  // MMC3 8KB PRG segment
+
+TODO - Write feature tests
 
 ## Labels
 Labels identify addresses within CPU address space. Every time a label is
@@ -258,6 +262,12 @@ the most-significat bytes are allocated to another array (arrayName.b). It is
 important to note that these byte arrays may not be arranged in order, or
 even be near each other in CPU address space. If a non-stripped array is
 required use a single large byte array and address it manually. 
+
+### Code labels
+A code label uniquely identifies a position within CPU address space relative
+to generated code.
+
+TODO - Complete documentation
 
 ## Data generation
 Raw data must often be defined directly within source code. The following

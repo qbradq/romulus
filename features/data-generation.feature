@@ -30,13 +30,57 @@ Feature: Data Generation
         Then PRG ROM byte 0x0000 should be 0x48
         And PRG ROM byte 0x000B should be 0x21
     
-    Scenario: ASCII positive modifier
+    Scenario: ASCII with modifier
         When compiling the line "ascii "Hello World!", 2"
         Then PRG ROM byte 0x0000 should be 0x4a
         And PRG ROM byte 0x000B should be 0x23
     
-    Scenario: ASCII negative modifier
-        When compiling the line "ascii "Hello World!", -0x20"
-        Then PRG ROM byte 0x0000 should be 0x28
-        And PRG ROM byte 0x000B should be 0x01
+    Scenario Outline: Table of bytes
+        When compiling the line "table byte test { $12, $34, $56, $78 }"
+        Then PRG ROM byte <addr> should be <value>
     
+    Examples:
+        | addr   | value |
+        | 0x0000 | 0x12  |
+        | 0x0001 | 0x34  |
+        | 0x0002 | 0x56  |
+        | 0x0003 | 0x78  |
+
+    Scenario Outline: Table of words
+        When compiling the line "table word test { $1234, $5678 }"
+        Then PRG ROM byte <addr> should be <value>
+    
+    Examples:
+        | addr   | value |
+        | 0x0000 | 0x34  |
+        | 0x0001 | 0x78  |
+        | 0x0002 | 0x12  |
+        | 0x0003 | 0x56  |
+
+    Scenario Outline: Table of triplets
+        When compiling the line "table triplet test { $123456, $789ABC }"
+        Then PRG ROM byte <addr> should be <value>
+    
+    Examples:
+        | addr   | value |
+        | 0x0000 | 0x56  |
+        | 0x0001 | 0xBC  |
+        | 0x0002 | 0x34  |
+        | 0x0003 | 0x9A  |
+        | 0x0004 | 0x12  |
+        | 0x0005 | 0x78  |
+
+    Scenario Outline: Table of double words
+        When compiling the line "table dword test { $12345678, $9ABCDEF0 }"
+        Then PRG ROM byte <addr> should be <value>
+    
+    Examples:
+        | addr   | value |
+        | 0x0000 | 0x78  |
+        | 0x0001 | 0xF0  |
+        | 0x0002 | 0x56  |
+        | 0x0003 | 0xDE  |
+        | 0x0004 | 0x34  |
+        | 0x0005 | 0xBC  |
+        | 0x0006 | 0x12  |
+        | 0x0007 | 0x9A  |
