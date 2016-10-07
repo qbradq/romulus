@@ -590,11 +590,21 @@ Assembler.prototype.generateCodePass = function() {
 };
 
 Assembler.prototype.immediateValue = function() {
+    var value = undefined;
+
     var token = this.consume("number");
     if(token) {
-        return token.value;
+        value = token.value;
+    } else if(this.consume("operator", "octothorpe")) {
+        var shift = 0;
+        if(this.consume("operator", "left-chevron")) {
+            shift = 0;
+        } else if(this.consume("operator", "right-chevron")) {
+            shift = 8;
+        }
+        value = this.consumeLabel() >>> shift;
     }
-    return undefined;
+    return value;
 };
 
 Assembler.prototype.expectImmediateValue = function() {
@@ -605,11 +615,7 @@ Assembler.prototype.expectImmediateValue = function() {
     return value;
 };
 
-Assembler.prototype.addressOrLabel = function() {
-    if(this.consume("operator", "asterisk")) {
-        return this.expectImmediateValue();
-    }
-
+Assembler.prototype.consumeLabel = function() {
     var name = "";
     while(true) {
         var label = this.consume("identifier");
@@ -641,6 +647,14 @@ Assembler.prototype.addressOrLabel = function() {
     }
 
     return undefined;
+};
+
+Assembler.prototype.addressOrLabel = function() {
+    if(this.consume("operator", "asterisk")) {
+        return this.expectImmediateValue();
+    }
+
+    return this.consumeLabel();
 };
 
 Assembler.prototype.keyword_flag = function() {

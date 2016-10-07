@@ -152,7 +152,7 @@ describe("Lexer", function() {
         });
 
         it("recognizes all operators", function() {
-            var tokens = uut.lex("test", "()[]{},+-*/#<>.:");
+            var tokens = uut.lex("test", "()[]{},+-*#<>.:");
             assert.equal(tokens.length, 16);
             assert.equal(tokens[0].type, "operator");
             assert.equal(tokens[0].value, "left-parenthesis");
@@ -175,17 +175,15 @@ describe("Lexer", function() {
             assert.equal(tokens[9].type, "operator");
             assert.equal(tokens[9].value, "asterisk");
             assert.equal(tokens[10].type, "operator");
-            assert.equal(tokens[10].value, "forward-slash");
+            assert.equal(tokens[10].value, "octothorpe");
             assert.equal(tokens[11].type, "operator");
-            assert.equal(tokens[11].value, "octothorpe");
+            assert.equal(tokens[11].value, "left-chevron");
             assert.equal(tokens[12].type, "operator");
-            assert.equal(tokens[12].value, "left-chevron");
+            assert.equal(tokens[12].value, "right-chevron");
             assert.equal(tokens[13].type, "operator");
-            assert.equal(tokens[13].value, "right-chevron");
+            assert.equal(tokens[13].value, "period");
             assert.equal(tokens[14].type, "operator");
-            assert.equal(tokens[14].value, "period");
-            assert.equal(tokens[15].type, "operator");
-            assert.equal(tokens[15].value, "colon");
+            assert.equal(tokens[14].value, "colon");
         });
     });
 });

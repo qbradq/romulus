@@ -161,7 +161,15 @@ Feature: Code generation
         | txs           | 9A0000 |
         | tya           | 980000 |
 
-    Scenario: Label dereference
+    Scenario: Label dereference high byte
         When compiling the line "label: lda #>label"
         Then the compiled output should be "A98000"
+    
+    Scenario: Label dereference low byte
+        When compiling the line "lda #<label label:"
+        Then the compiled output should be "A90200"
+    
+    Scenario: Label dereference low byte implied
+        When compiling the line "lda #label label:"
+        Then the compiled output should be "A90200"
     

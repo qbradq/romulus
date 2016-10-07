@@ -99,7 +99,6 @@ var operators = {
     "+": "plus",
     "-": "minus",
     "*": "asterisk",
-    "/": "forward-slash",
     "#": "octothorpe",
     "<": "left-chevron",
     ">": "right-chevron",
