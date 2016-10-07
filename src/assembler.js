@@ -921,8 +921,6 @@ Assembler.prototype.opcode = function() {
     value = this.immediateValue();
     if(value !== undefined) {
         addressingMode = 1;
-    } else {
-        
     }
     if(value === undefined) {
         value = this.addressOrLabel();
@@ -980,9 +978,6 @@ Assembler.prototype.opcode = function() {
             }
         }
     }
-    if(value === undefined) {
-        this.error("Expected a valid addressing mode");
-    }
 
     var opcodeByte = opcodeData[addressingMode];
     if(opcodeByte === null) {
@@ -991,10 +986,12 @@ Assembler.prototype.opcode = function() {
             addressingMode += 3;
         }
     }
+    opcodeByte = opcodeData[addressingMode];
     if(opcodeByte === null &&
         addressingMode === 5) {
         addressingMode = 11;
     }
+    opcodeByte = opcodeData[addressingMode];
     if(opcodeByte === null) {
         this.error("Opcode %s does not support addressing mode %s",
             opcode, addressingModeNames[addressingMode]);
@@ -1020,6 +1017,19 @@ Assembler.prototype.opcode = function() {
             this.write(opcodeByte);
             this.write(value);
             this.write(value >>> 8);
+            break;
+        case 11:
+            var endPc = (this.origin + 2) & 0xffff;
+            var ofs = value - endPc;
+            if(ofs < -128 ||
+                ofs > 127) {
+                this.error("Branch address out of range");
+            }
+            if(ofs < 0) {
+                ofs = 256 + ofs;
+            }
+            this.write(opcodeByte);
+            this.write(ofs);
             break;
         default:
             this.error("Unhandled addressing mode");

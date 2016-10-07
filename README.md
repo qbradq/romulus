@@ -309,6 +309,105 @@ always dereferenced.
   lda levelPointer.b,x
   sta ptr+1
 
+## Code generation
+What would a compiler be without the ability to generate machine code? All
+statements that start with an opcode will generate one machine instruction
+along with the nessecary parameters. There are thirteen different addressing
+modes supported by the 6502 processor. Romulus compresses these into eight
+different syntaxes.  
+
+### Implied operation
+In implied mode no parameters are required after the opcode. This applies to
+instructions that use the Implicit and Accumulator addressing modes.
+
+  sei
+  tax
+  dex
+  pha
+
+### Immediate value
+Immediate value mode is used anytime a numeric litteral is found after the
+opcode. The compiler selects Immediate addressing mode for the instruction.
+
+  // Loads the number zero into the Accumulator
+  lda 0
+
+Note that if a label's value is required to be used as an immediate value
+the label dereference operator (and typically a byte selection operator) must
+be used.
+
+  // Store a function pointer
+  lda #<myFunc
+  sta ptr.a
+  lda #>myFunc
+  sta ptr.b
+
+### Address
+Address mode is used anytime a label is found after the opcode. The compiler
+selects between ZeroPage, Absolute, and Relative addressing as appropriote
+based on the opcode and the label.
+
+  lda myTempVariable
+  beq someLabel
+  jsr frameSkip
+
+Note that if a numeric address litteral is required the address reference
+opperator must be used.
+
+  jsr *$8000
+
+### Address,X
+This mode is used anytime a label is found after the opcode followed by a comma
+and a lower-case x. Like the Address mode, this selects between ZeroPage,X and
+Absolute,X based on the opcode and label referenced.
+
+  lda buffer,x
+  sta *0x6000,x
+
+### Address,Y
+This mode is used anytime a label is found after the opcode followed by a comma
+and a lower-case y. Like the Address mode, this selects between ZeroPage,Y and
+Absolute,Y based on the opcode and label referenced.
+
+  lda songData,y
+  sta *0x0300,y
+
+### Indirect
+Indirect mode translates directly to the Indirect addressing mode of the 6502.
+It is used when a label is found to the left of the opcode surrounded by
+parenthesis.
+
+  jmp (frameHandler)
+  jmp (*0xFFFC)
+
+### Indexed Indirect
+Indexed indirect mode translates directly to the Indexed Indirect addressing
+mode of the 6502. It is used when a label, comma and lower-case x is found to
+the left of the opcode surrounded by parenthesis. Note that the label
+referenced must be a zeropage label.
+
+  lda (streamPointers,x)
+  sta (*0xFE)
+
+### Indirect Indexed
+Indirect indexed mode translates directly to the Indirect Indexed addressing
+mode of the 6502. It is used when a label is found to the left of the opcode
+surrounded by parenthesis followed by a comma and a lower-case y. Note that
+the label referenced must be a zeropage label.
+
+  lda (bufptr),y
+  sta (*0x2006)
+
+## Numerical constants
+Romulus supports limited mathmatical operations on numeric litterals and
+labels. Only addition, subtraction, and negation (negative numbers) are
+supported. Evaluation is done from left to right. All calculations are done
+with 32-bit percision and then truncated to an unsigned 16-bit value. The
+value may further be truncated to an 8-bit unsigned value depending on the
+context.
+
+  lda levelPtrTable.a + 4 - 2 + 1 
+
 # Compilation
 Compilation occurs in this order:
  1. include statements are processed recursively until none are left
