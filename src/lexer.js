@@ -25,7 +25,8 @@ var keywords = {
     "prgbank": true,
     "prgofs": true,
     "chrbank": true,
-    "chrofs": true
+    "chrofs": true,
+    "scope": true
 };
 
 var opcodes = {

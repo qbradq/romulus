@@ -278,6 +278,26 @@ addresses.
       bne loop
     rts
 
+### Scope labels
+The scope keyword introduces a named lexical scope for the labels found within.
+The named lexical scope lasts until the terminating brace. The scope keyword
+itself defines a label of the same name. Labels within the scope may be
+referenced directly by code within the scope. From outside the scope the dotted
+scope label form must be used.
+
+  // The scope keyword can be used as handy function enclosures
+  scope myFunc {
+    fast byte counter
+    lda 0
+    sta counter
+    loop:
+      dec counter
+      bne loop
+    rts
+  }
+  jsr myFunc
+  lda myFunc.counter
+
 ## Data generation
 Raw data must often be defined directly within source code. The following
 keywords accomplish this.
@@ -416,6 +436,9 @@ value may further be truncated to an 8-bit unsigned value depending on the
 context.
 
   lda levelPtrTable.a + 4 - 2 + 1 
+
+## Macros
+Preprocessing macros 
 
 # Compilation
 Compilation occurs in this order:

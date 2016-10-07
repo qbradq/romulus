@@ -160,3 +160,8 @@ Feature: Code generation
         | txa           | 8A0000 |
         | txs           | 9A0000 |
         | tya           | 980000 |
+
+    Scenario: Label dereference
+        When compiling the line "label: lda #>label"
+        Then the compiled output should be "A98000"
+    

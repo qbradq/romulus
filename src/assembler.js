@@ -65,6 +65,7 @@ function Assembler() {
     this.prgSegmentLength = 0;
     this.prgSegmentMax = 0x8000;
     this.origin = 0x8000;
+    this.scopeStack = [];
 }
 
 Assembler.prototype.setEmmitFlag = function(flag) {
@@ -148,8 +149,20 @@ Assembler.prototype.joinScope = function() {
     return ret;
 }
 
+Assembler.prototype.searchLabel = function(name) {
+    var scopes = this.scopeStack.slice(0);
+    while(scopes.length > 0) {
+        var fqn = scopes.concat(name).join(".");
+        if(this.labels.hasOwnProperty(fqn)) {
+            return this.labels[fqn];
+        }
+        scopes.pop();
+    }
+    return this.labels[name];
+};
+
 Assembler.prototype.resolveLabelScope = function(name) {
-    return name;
+    return this.scopeStack.concat(name).join(".");
 };
 
 Assembler.prototype.registerLabel = function(label) {
@@ -166,7 +179,7 @@ Assembler.prototype.getLabel = function(name) {
 };
 
 Assembler.prototype.resolveLabel = function(name) {
-    var label = this.getLabel(name);
+    var label = this.searchLabel(name);
     if(!label) {
         if(this.ignoreUnknownLabels) {
             return 0x80;
@@ -355,6 +368,10 @@ Assembler.prototype.nextPrecompilePass = function() {
 };
 
 Assembler.prototype.nextPass = function() {
+    if(this.scopeStack.length > 0) {
+        this.error("Unterminated scope %s", this.scopeStack.pop());
+    }
+    this.scopeStack = [];
     this.idx = 0;
     this.segment = "PRG";
     this.prgSegmentLength = 0;
@@ -589,16 +606,41 @@ Assembler.prototype.expectImmediateValue = function() {
 };
 
 Assembler.prototype.addressOrLabel = function() {
-    var label = this.consume("identifier");
-    if(label) {
-        return this.resolveLabel(label.name);
+    if(this.consume("operator", "asterisk")) {
+        return this.expectImmediateValue();
     }
 
-    if(!this.consume("operator", "asterisk")) {
-        return undefined;
+    var name = "";
+    while(true) {
+        var label = this.consume("identifier");
+        if(label) {
+            name += label.value;
+        }
+        if(this.consume("operator", "period")) {
+            name += ".";
+        } else {
+            break;
+        }
     }
 
-    return this.expectImmediateValue();
+    if(name !== "") {
+        var l = this.searchLabel(name);
+        if(l) {
+            if(l.value === undefined) {
+                if(l.mode === "fast") {
+                    return 0x80;
+                } else {
+                    return 0x8000;
+                }
+            } else {
+                return l.value;
+            }
+        } else {
+            return undefined;
+        }
+    }
+
+    return undefined;
 };
 
 Assembler.prototype.keyword_flag = function() {
@@ -909,6 +951,33 @@ Assembler.prototype.keyword_codepage = function() {
     return true;
 };
 
+Assembler.prototype.keyword_scope = function() {
+    if(!this.consume("keyword", "scope")) {
+        return false;
+    }
+
+    var name = this.expect("identifier");
+    this.expect("operator", "left-brace");
+    this.defineLabel(name.value);
+    this.scopeStack.push(name.value);
+
+    return true;
+};
+
+Assembler.prototype.keyword_scope_end = function() {
+    if(!this.consume("operator", "right-brace")) {
+        return false;
+    }
+
+    if(this.scopeStack.length < 1) {
+        this.error("Unexpected operator left-brace");
+    }
+
+    this.scopeStack.pop();
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
     return this.label() || 
         this.variable() ||
@@ -920,6 +989,8 @@ Assembler.prototype.statement = function() {
         this.keyword_chrbank() ||
         this.keyword_chrofs() ||
         this.keyword_codepage() ||
+        this.keyword_scope() ||
+        this.keyword_scope_end() ||
         this.opcode();
 };
 
@@ -927,14 +998,7 @@ Assembler.prototype.label = function() {
     var name = this.consume("identifier");
     if(name) {
         if(this.consume("operator", "colon")) {
-            if(this.pass === "label") {
-                this.registerLabel(new Label(
-                    name.value, undefined, 0, "ROM", undefined
-                ));
-            } else if(this.pass === "resolve") {
-                var label = this.getLabel(name.value);
-                label.value = this.origin;
-            }
+            this.defineLabel(name.value);
             return true;
         } else {
             this.rollBack();
@@ -1132,13 +1196,17 @@ Assembler.prototype.opcode = function() {
         case 11:
             var endPc = (this.origin + 2) & 0xffff;
             var ofs = value - endPc;
-            if(ofs < -128 ||
-                ofs > 127) {
-                this.error("Branch address out of range");
-            }
-            if(ofs < 0) {
-                ofs = 256 + ofs;
-            }
+            if(this.pass === "code") {
+                if(ofs < -128 ||
+                    ofs > 127) {
+                    this.error("Branch address out of range");
+                }
+                if(ofs < 0) {
+                    ofs = 256 + ofs;
+                }
+            } else {
+                ofs = 0x80;
+            } 
             this.write(opcodeByte);
             this.write(ofs);
             break;
@@ -1148,6 +1216,17 @@ Assembler.prototype.opcode = function() {
     }
 
     return true;
+};
+
+Assembler.prototype.defineLabel = function(name) {
+    if(this.pass === "label") {
+        this.registerLabel(new Label(
+            name, undefined, 0, "ROM", undefined
+        ));
+    } else if(this.pass === "resolve") {
+        var label = this.getLabel(name);
+        label.value = this.origin;
+    }
 };
 
 module.exports = Assembler;
