@@ -263,9 +263,20 @@ required use a single large byte array and address it manually.
 
 ### Code labels
 A code label uniquely identifies a position within CPU address space relative
-to generated code.
+to generated code. To define a label simply follow an identifier with a colon.
+Code labels are identical to variable labels except that they refer to ROM
+addresses.
 
-TODO - Complete documentation
+  myFunction:
+    lda 7
+    sta somewhere
+    ldx 16
+    loop:
+      lda data,x
+      sta buffer,x
+      dex
+      bne loop
+    rts
 
 ## Data generation
 Raw data must often be defined directly within source code. The following

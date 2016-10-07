@@ -174,7 +174,7 @@ Assembler.prototype.resolveLabel = function(name) {
             this.error("Unresolved label %s", name);
         }
     }
-    return label;
+    return label.value;
 };
 
 Assembler.prototype.setCapability = function(name, value) {
@@ -249,6 +249,12 @@ Assembler.prototype.rewindStream = function(offset) {
 
 Assembler.prototype.endOfStream = function() {
     return this.tokens.length <= this.idx;
+};
+
+Assembler.prototype.rollBack = function() {
+    if(this.idx > 0) {
+        --this.idx;
+    }
 };
 
 Assembler.prototype.consume = function(type, value) {
@@ -874,7 +880,7 @@ Assembler.prototype.keyword_chrbank = function() {
     return true;
 };
 
-Assembler.prototype.keyword_prgofs = function() {
+Assembler.prototype.keyword_chrofs = function() {
     if(!this.consume("keyword", "chrofs")) {
         return false;
     }
@@ -891,7 +897,8 @@ Assembler.prototype.keyword_prgofs = function() {
 };
 
 Assembler.prototype.statement = function() {
-    return this.variable() ||
+    return this.label() || 
+        this.variable() ||
         this.keyword_out() ||
         this.keyword_ascii() ||
         this.keyword_table() ||
@@ -900,6 +907,28 @@ Assembler.prototype.statement = function() {
         this.keyword_chrbank() ||
         this.keyword_chrofs() ||
         this.opcode();
+};
+
+Assembler.prototype.label = function() {
+    var name = this.consume("identifier");
+    if(name) {
+        if(this.consume("operator", "colon")) {
+            if(this.pass === "label") {
+                this.registerLabel(new Label(
+                    name.value, undefined, 0, "ROM", undefined
+                ));
+            } else if(this.pass === "resolve") {
+                var label = this.getLabel(name.value);
+                label.value = this.origin;
+            }
+            return true;
+        } else {
+            this.rollBack();
+            return false;
+        }
+    } else {
+        return false;
+    }
 };
 
 Assembler.prototype.variable = function() {
