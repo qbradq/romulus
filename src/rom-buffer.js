@@ -20,4 +20,8 @@ RomBuffer.prototype.reset = function() {
     this.ofs = 0;
 };
 
+RomBuffer.prototype.seek = function(ofs) {
+    this.ofs = ofs;
+}
+
 module.exports = RomBuffer;

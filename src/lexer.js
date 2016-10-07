@@ -21,7 +21,11 @@ var keywords = {
     "capability": true,
     "out": true,
     "ascii": true,
-    "table": true
+    "table": true,
+    "prgbank": true,
+    "prgofs": true,
+    "chrbank": true,
+    "chrofs": true
 };
 
 var opcodes = {

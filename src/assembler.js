@@ -826,11 +826,79 @@ Assembler.prototype.keyword_table = function() {
     return true;
 };
 
+Assembler.prototype.keyword_prgbank = function() {
+    if(!this.consume("keyword", "prgbank")) {
+        return false;
+    }
+
+    var bank = this.expectImmediateValue();
+    if(bank > this.getCapability("prgrom")) {
+        this.error("Requested bank exceeds number of PRG ROM banks");
+    }
+
+    this.segment = "PRG";
+    this.prgrom.seek(0x4000 * bank);
+
+    return true;
+};
+
+Assembler.prototype.keyword_prgofs = function() {
+    if(!this.consume("keyword", "prgofs")) {
+        return false;
+    }
+    
+    var ofs = this.expectImmediateValue();
+    if(ofs >= this.prgrom.buffer.length) {
+        this.error("Requested offset exceeds the length of PRG ROM");
+    }
+
+    this.segment = "PRG";
+    this.prgrom.seek(ofs);
+
+    return true;
+};
+
+Assembler.prototype.keyword_chrbank = function() {
+    if(!this.consume("keyword", "chrbank")) {
+        return false;
+    }
+
+    var bank = this.expectImmediateValue();
+    if(bank > this.getCapability("chrrom")) {
+        this.error("Requested bank exceeds number of CHR ROM banks");
+    }
+
+    this.segment = "CHR";
+    this.chrrom.seek(0x2000 * bank);
+
+    return true;
+};
+
+Assembler.prototype.keyword_prgofs = function() {
+    if(!this.consume("keyword", "chrofs")) {
+        return false;
+    }
+    
+    var ofs = this.expectImmediateValue();
+    if(ofs >= this.chrrom.buffer.length) {
+        this.error("Requested offset exceeds the length of CHR ROM");
+    }
+
+    this.segment = "CHR";
+    this.chrrom.seek(ofs);
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
     return this.variable() ||
         this.keyword_out() ||
         this.keyword_ascii() ||
         this.keyword_table() ||
+        this.keyword_prgbank() ||
+        this.keyword_prgofs() ||
+        this.keyword_chrbank() ||
+        this.keyword_chrofs() ||
         this.opcode();
 };
 

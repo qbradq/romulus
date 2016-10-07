@@ -186,15 +186,13 @@ code and data segments.
 The "chrbank" directive sets the output location to the CHR ROM area at the
 start of the indicated 8KB bank.
 
-  prgbank 2  // Output starts 16KB into the CHR ROM area
+  chrbank 2  // Output starts 16KB into the CHR ROM area
 
 The "chrofs" directive sets the CHR ROM area offset to an absolute value. If
 trying to use the compiler to manage the location and arrangement of character
 data the "chrofs" directive will almost certainly need to be used.
 
   chrofs 0x004000 // Second 8KB bank
-
-TODO - Write feature tests
 
 ### Codepage
 Starts a new codepage. A codepage is a segment of memory with a specific base
