@@ -36,7 +36,7 @@ Feature: Data Generation
         And PRG ROM byte 0x000B should be 0x23
     
     Scenario Outline: Table of bytes
-        When compiling the line "table byte test { $12, $34, $56, $78 }"
+        When compiling the line "table byte test $12, $34, $56, $78"
         Then PRG ROM byte <addr> should be <value>
     
     Examples:
@@ -47,7 +47,7 @@ Feature: Data Generation
         | 0x0003 | 0x78  |
 
     Scenario Outline: Table of words
-        When compiling the line "table word test { $1234, $5678 }"
+        When compiling the line "table word test $1234, $5678"
         Then PRG ROM byte <addr> should be <value>
     
     Examples:
@@ -58,7 +58,7 @@ Feature: Data Generation
         | 0x0003 | 0x56  |
 
     Scenario Outline: Table of triplets
-        When compiling the line "table triplet test { $123456, $789ABC }"
+        When compiling the line "table triplet test $123456, $789ABC"
         Then PRG ROM byte <addr> should be <value>
     
     Examples:
@@ -71,7 +71,7 @@ Feature: Data Generation
         | 0x0005 | 0x78  |
 
     Scenario Outline: Table of double words
-        When compiling the line "table dword test { $12345678, $9ABCDEF0 }"
+        When compiling the line "table dword test $12345678, $9ABCDEF0"
         Then PRG ROM byte <addr> should be <value>
     
     Examples:

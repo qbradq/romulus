@@ -787,7 +787,6 @@ Assembler.prototype.keyword_table = function() {
     }
 
     var name = this.expect("identifier").value;
-    this.expect("operator", "left-brace");
     var elements = [];
     while(true) {
         elements.push(this.expectImmediateValue());
@@ -795,7 +794,6 @@ Assembler.prototype.keyword_table = function() {
             break;
         }
     }
-    this.expect("operator", "right-brace");
 
     // Generate data
     var tableStartAddr = this.origin;

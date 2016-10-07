@@ -296,13 +296,13 @@ offset. If given, the offset is applied to every byte in the string.
 The table keyword outputs stripped arrays of bytes to the ROM. Unline variable
 arrays the successive byte fields of a table are guaranteed to be in order
 and contingious. The same size keywords that apply to variables apply to
-tables as well however the allocation keywords do not. Note that within a table
-statement label names are always dereferenced.
+tables as well however the allocation keywords do not. The elements of a table
+are seperated by commas. Note that within a table statement label names are
+always dereferenced.
 
   // Pointer table
-  table word levelPointers {
+  table word levelPointers
     level1, level2, level3, 0x0000
-  }
   // Access the table
   lda levelPointer.a,x
   sta ptr
