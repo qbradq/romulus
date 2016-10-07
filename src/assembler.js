@@ -896,6 +896,19 @@ Assembler.prototype.keyword_chrofs = function() {
     return true;
 };
 
+Assembler.prototype.keyword_codepage = function() {
+    if(!this.consume("keyword", "codepage")) {
+        return false;
+    }
+
+    this.origin = this.expectImmediateValue();
+    this.expect("operator", "comma");
+    this.prgSegmentMax = this.expectImmediateValue();
+    this.prgSegmentLength = 0;
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
     return this.label() || 
         this.variable() ||
@@ -906,6 +919,7 @@ Assembler.prototype.statement = function() {
         this.keyword_prgofs() ||
         this.keyword_chrbank() ||
         this.keyword_chrofs() ||
+        this.keyword_codepage() ||
         this.opcode();
 };
 
