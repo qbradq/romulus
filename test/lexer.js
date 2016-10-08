@@ -36,10 +36,10 @@ describe("Lexer", function() {
         });
 
         it("differentiates keywords", function() {
-            var tokens = uut.lex("test", "origin");
+            var tokens = uut.lex("test", "include");
             assert.equal(tokens.length, 1);
             assert.equal(tokens[0].type, "keyword");
-            assert.equal(tokens[0].value, "origin");
+            assert.equal(tokens[0].value, "include");
         });
         
         it("differentiates opcodes", function() {
@@ -153,7 +153,7 @@ describe("Lexer", function() {
 
         it("recognizes all operators", function() {
             var tokens = uut.lex("test", "()[]{},+-*#<>.:");
-            assert.equal(tokens.length, 16);
+            assert.equal(tokens.length, 15);
             assert.equal(tokens[0].type, "operator");
             assert.equal(tokens[0].value, "left-parenthesis");
             assert.equal(tokens[1].type, "operator");

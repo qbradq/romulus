@@ -438,7 +438,15 @@ context.
   lda levelPtrTable.a + 4 - 2 + 1 
 
 ## Macros
-Preprocessing macros 
+Macros allow the programmer to define an identifier that is replaced with a
+series of tokens any time it is encountered. This is useful for everything
+from assigning a meaningful name to a magic number or address to generating
+code.
+
+  // Macro for standard NES memory register
+  define OAMDMA { *$4014 }
+
+Note that macros are not bound by lexical scope.
 
 # Compilation
 Compilation occurs in this order:

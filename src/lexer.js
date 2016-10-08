@@ -2,7 +2,6 @@ var util = require("util"),
     TokenConstructor = require("./token");
 
 var keywords = {
-    "origin": true,
     "include": true,
     "flag": true,
     "on": true,
@@ -26,7 +25,8 @@ var keywords = {
     "prgofs": true,
     "chrbank": true,
     "chrofs": true,
-    "scope": true
+    "scope": true,
+    "define": true
 };
 
 var opcodes = {

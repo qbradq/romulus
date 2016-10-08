@@ -4,7 +4,8 @@ var util = require("util"),
     Lexer = require("./lexer"),
     Label = require("./label"),
     RomBuffer = require("./rom-buffer"),
-    opcodes = require("./opcodes");
+    opcodes = require("./opcodes"),
+    Macro = require("./macro");
 
 var addressingModeNames = [
     "Implied",
@@ -66,7 +67,19 @@ function Assembler() {
     this.prgSegmentMax = 0x8000;
     this.origin = 0x8000;
     this.scopeStack = [];
+    this.macros = {};
 }
+
+Assembler.prototype.registerMacro = function(macro) {
+    if(this.macros.hasOwnProperty(macro.name)) {
+        this.error("Duplicate macro name %s", macro.name);
+    }
+    this.macros[macro.name] = macro;
+};
+
+Assembler.prototype.getMacro = function(name) {
+    return this.macros[name];
+};
 
 Assembler.prototype.setEmmitFlag = function(flag) {
     this.prgrom.emmit(flag);
@@ -322,8 +335,15 @@ Assembler.prototype.compileFile = function(filePath) {
 };
 
 Assembler.prototype.compile = function() {
+    var depth;
+
     // Process include statements
+    depth = 0;
     while(true) {
+        ++depth;
+        if(depth >= 16) {
+            this.error("Exceeded maximum nested include depth of %d", depth);
+        }
         this.nextPrecompilePass();
         if(this.includeCompilationPass() == 0) {
             break;
@@ -331,7 +351,12 @@ Assembler.prototype.compile = function() {
     }
 
     // Process conditional compilation statements
+    depth = 0;
     while(true) {
+        ++depth;
+        if(depth >= 16) {
+            this.error("Exceeded maximum nested conditional compilation depth of %d", depth);
+        }
         this.nextPrecompilePass();
         this.conditionalCompilationPass();
         if(this.tokens.length === this.tokensNextPass.length) {
@@ -340,6 +365,19 @@ Assembler.prototype.compile = function() {
     }
 
     // Expand macros
+    this.nextPrecompilePass();
+    this.compileMacros();
+    depth = 0;
+    while(true) {
+        ++depth;
+        if(depth >= 16) {
+            this.error("Exceeded maximum nested macro expansion depth of %d", depth);
+        }
+        this.nextPrecompilePass();
+        if(this.expandMacroPass() == 0) {
+            break;
+        }
+    }
 
     // Process capabilities
     this.nextPrecompilePass();
@@ -420,6 +458,74 @@ Assembler.prototype.conditionalCompilationPass = function() {
             this.tokensNextPass.push(token);
         }
     }
+};
+
+Assembler.prototype.compileMacros = function() {
+    this.pass = "compile-macro";
+
+    while(true) {
+        var token = this.consume();
+        if(!token) {
+            break;
+        }
+        if(token.type === "keyword" &&
+            token.value === "define") {
+            this.compileMacro();
+        } else {
+            this.tokensNextPass.push(token);
+        }
+    }
+};
+
+Assembler.prototype.compileMacro = function() {
+    var name = this.expect("identifier").value;
+    this.expect("operator", "left-brace");
+    
+    var tokens = [];
+
+    while(true) {
+        var token = this.consume();
+        if(!token) {
+            this.error("Unexpected end of file within macro body");
+        }
+
+        if(token.type === "operator" &&
+            token.value === "right-brace") {
+            break;
+        }
+        tokens.push(token);
+    }
+
+    this.registerMacro(new Macro(name, tokens));
+};
+
+Assembler.prototype.expandMacroPass = function() {
+    this.pass = "expand";
+
+    var count = 0;
+
+    while(true) {
+        var token = this.consume();
+        if(!token) {
+            break;
+        }
+        if(token.type === "identifier") {
+            var macro = this.getMacro(token.value);
+            if(macro) {
+                var tokens = macro.expand();
+                for(var i = 0; i < tokens.length; ++i) {
+                    this.tokensNextPass.push(tokens[i]);
+                }
+                ++count;
+            } else {
+                this.tokensNextPass(token);
+            }
+        } else {
+            this.tokensNextPass.push(token);
+        }
+    }
+
+    return count;
 };
 
 Assembler.prototype.capabilitiesPass = function() {
