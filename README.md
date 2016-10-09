@@ -138,8 +138,8 @@ Set a PCB capability. These describe the capabilities of the PCB which the
 program targets. This does not nessecarily have to be a known PCB.
 The attributes of the PCB can be described individually. However in-built
 macros are provided for most of the known, popular PCBs used in North American
-release titles. For a list of these macros use the command-line option
---list-pcb-macros.
+release titles. For a list of these macros see the end of this document or use
+the command-line option --list-pcb-macros.
 
   capability mapper 0  // Mapper number (0-255)
   capability busconflict on // Mapper has bus conflicts
@@ -448,7 +448,7 @@ code.
 
 Note that macros are not bound by lexical scope.
 
-# Compilation
+# Order of Compilation
 Compilation occurs in this order:
  1. include statements are processed recursively until none are left
  2. if and flag statements are processed recursively until none are left
@@ -457,3 +457,45 @@ Compilation occurs in this order:
  5. Labels are scanned in a single pass
  6. Labels are resolved in a single pass
  7. Code is generated
+
+# Built-In PCB Macros
+As described under the capability keyword the compiler defaults to generating
+an image suitable for the NES-NROM-128 PCB and clones. In order to target the
+compiler to a different PCB individual capability statements can be used to
+describe the capabilities of the target board. These macros do just that for
+the development boards currently available. These macros are defined in the
+file src/pcb.asm.
+
+Note that the macro names align with the products on
+http://www.infiniteneslives.com/nessupplies.php , not nessecarily their
+production counterparts. For instance, SEROM offers 128K of CHR ROM which is
+compatible with a number of Nintendo PCBs offering 32K of PRG ROM and expanded
+CHR ROM.
+
+  Macro    Mapper PRG  CHR  SRAM Battery?
+  NROM     None   32K  8K   None N/A
+  SEROM    MMC1   32K  128K None N/A
+  SIROM    MMC1   32K  128K 8K   Yes
+  SLROM    MMC1   256K 128K None N/A
+  SJROM    MMC1   256K 128K 8K   No
+  SKROM    MMC1   256K 256K 8K   Yes
+  SGROM    MMC1   256K RAM  None N/A
+  SNROM    MMC1   256K RAM  8K   Yes
+  SUROM    MMC1   512K RAM  8K   Yes
+  UNROM    UxROM  128K RAM  None N/A
+  CNROM    CxROM  32K  128K None N/A
+  TLROM    MMC3   512K 256K None N/A
+  TSROM    MMC3   512K 256K 8K   No
+  TKROM    MMC3   512K 256K 8K   Yes
+  TGROM    MMC3   512K RAM  None No
+  TNROM    MMC3   512K RAM  8K   Yes
+  PNROM    MMC2   256K 128K None N/A
+  PKROM    MMC2   256K 128K 8K   Yes
+  FKROM    MMC4   256K 128K 8K   Yes
+
+Note that all macros define vertical mirroring (horizontal arrangement). If
+a mapper is in use that does not control mirroring such as NROM and horizontal
+mirroring is desired use the appropriote capability statement. This statement
+may come before or after the macro as the macros never explicitly set
+mirroring. The same can be said for PAL support. PAL support is disabled by
+default. If required turn it on explicitly.

@@ -364,6 +364,11 @@ Assembler.prototype.compile = function() {
         }
     }
 
+    // Insert built-in macros
+    var filePath = path.join(__dirname, "pcb.asm");
+    var tokens = this.lexer.lex("pcb.asm", fs.readFileSync(filePath));
+    this.tokensNextPass = this.tokensNextPass.concat(tokens);
+
     // Expand macros
     this.nextPrecompilePass();
     this.compileMacros();
