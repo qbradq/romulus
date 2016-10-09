@@ -329,7 +329,6 @@ Assembler.prototype.compileFile = function(filePath) {
         throw new Error("Assembler.compileFile() file path must be absolute");
     }
     filePath = path.relative(process.cwd(), filePath);
-    console.log(filePath);
     this.tokensNextPass = this.lexer.lex(filePath, fs.readFileSync(filePath));
     this.compile();
 };

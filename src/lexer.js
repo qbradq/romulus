@@ -340,34 +340,42 @@ Lexer.prototype.parseToken = function() {
                         break;
                     case "/":
                         this.mode = "POSSIBLE_COMMENT";
+                        this.tokenStartChar = this.char;
                         break;
                     case "0":
                         this.mode = "LEADING_ZERO";
+                        this.tokenStartChar = this.char;
                         break;
                     case "$":
                         this.mode = "HEXADECIMAL";
+                        this.tokenStartChar = this.char;
                         startIdx = this.idx;
                         length = 0;
                         break;
                     case "%":
                         this.mode = "BINARY";
+                        this.tokenStartChar = this.char;
                         startIdx = this.idx;
                         length = 0;
                         break;
                     case "\"":
                         this.mode = "STRING";
                         str = [];
+                        this.tokenStartChar = this.char;
                         break;
                     default:
                         if(decimalChars.hasOwnProperty(c)) {
+                            this.tokenStartChar = this.char;
                             this.mode = "DECIMAL";
                             startIdx = this.idx - 1;
                             length = 1;
                         } else if(identifierChars.hasOwnProperty(c)) {
+                            this.tokenStartChar = this.char;
                             this.mode = "IDENTIFIER";
                             startIdx = this.idx - 1;
                             length = 1;
                         } else if(operators.hasOwnProperty(c)) {
+                            this.tokenStartChar = this.char;
                             return this.token("operator", operators[c]);
                         } else {
                             throw this.error("Unexpected character %s", c);
@@ -385,8 +393,8 @@ Lexer.prototype.parseToken = function() {
                         this.blockCommentDepth = 1;
                         break;
                     default:
-                        this.reprocessLastChar = true;
-                        return this.token("operator", operators["/"]);
+                        this.error("Unexpected character %s", c);
+                        break;
                 }
                 break;
             case "LINE_COMMENT":

@@ -139,7 +139,7 @@ program targets. This does not nessecarily have to be a known PCB.
 The attributes of the PCB can be described individually. However in-built
 macros are provided for most of the known, popular PCBs used in North American
 release titles. For a list of these macros see the end of this document or use
-the command-line option --list-pcb-macros.
+the command-line option --list-pcbs.
 
   capability mapper 0  // Mapper number (0-255)
   capability busconflict on // Mapper has bus conflicts
