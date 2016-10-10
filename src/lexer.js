@@ -26,7 +26,8 @@ var keywords = {
     "chrbank": true,
     "chrofs": true,
     "scope": true,
-    "define": true
+    "define": true,
+    "skipto": true
 };
 
 var opcodes = {

@@ -1102,6 +1102,26 @@ Assembler.prototype.keyword_scope_end = function() {
     return true;
 };
 
+Assembler.prototype.keyword_skipto = function() {
+    if(!this.consume("keyword", "skipto")) {
+        return false;
+    }
+
+    if(this.segment !== "PRG") {
+        this.error("skipto called within a CHR ROM bank");
+    }
+
+    var address = this.expectImmediateValue();
+    if(address < this.origin) {
+        this.error("Attempted to skipto a past address");
+    }
+
+    var toSkip = address - this.origin;
+    this.prgrom.seek(toSkip);
+
+    return true;
+};
+
 Assembler.prototype.statement = function() {
     return this.label() || 
         this.variable() ||
@@ -1115,6 +1135,7 @@ Assembler.prototype.statement = function() {
         this.keyword_codepage() ||
         this.keyword_scope() ||
         this.keyword_scope_end() ||
+        this.keyword_skipto() ||
         this.opcode();
 };
 
