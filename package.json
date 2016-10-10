@@ -1,5 +1,5 @@
 {
-  "name": "romulus",
+  "name": "romulus-asm",
   "version": "1.0.0",
   "description": "An opinionated assembler for the Nintendo Entertainment System",
   "main": "index.js",
