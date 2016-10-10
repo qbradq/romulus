@@ -522,7 +522,7 @@ Assembler.prototype.expandMacroPass = function() {
                 }
                 ++count;
             } else {
-                this.tokensNextPass(token);
+                this.tokensNextPass.push(token);
             }
         } else {
             this.tokensNextPass.push(token);
