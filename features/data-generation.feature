@@ -11,6 +11,11 @@ Feature: Data Generation
         When compiling the line "out word $5aa5"
         Then PRG ROM byte 0x0000 should be 0xA5
         And PRG ROM byte 0x0001 should be 0x5A
+    
+    Scenario: Out word label
+        When compiling the line "out word label label:"
+        Then PRG ROM byte 0x0000 should be 0x02
+        And PRG ROM byte 0x0001 should be 0x80
 
     Scenario: Out triplet
         When compiling the line "out triplet $5aa5d7"

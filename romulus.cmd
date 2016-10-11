@@ -1,2 +1,7 @@
-@ECHO OFF
-node index.js %1 %2 %3 %4 %5 %6 %7 %8 %9
+@IF EXIST "%~dp0\node.exe" (
+  "%~dp0\node.exe"  "%~dp0\node_modules\romulus-asm\index.js" %*
+) ELSE (
+  @SETLOCAL
+  @SET PATHEXT=%PATHEXT:;.JS;=;%
+  node  "%~dp0\node_modules\romulus-asm\index.js" %*
+)

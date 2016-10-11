@@ -195,11 +195,20 @@ Assembler.prototype.resolveLabel = function(name) {
     var label = this.searchLabel(name);
     if(!label) {
         if(this.ignoreUnknownLabels) {
-            return 0x80;
+            return 0x8000;
         } else {
             this.error("Unresolved label %s", name);
         }
     }
+
+    if(label.value === undefined) {
+        if(this.pass !== "code") {
+            return 0x8000;
+        } else {
+            this.error("Label %s never resolved to an address", name);
+        }
+    }
+
     return label.value;
 };
 
@@ -740,20 +749,7 @@ Assembler.prototype.consumeLabel = function() {
     }
 
     if(name !== "") {
-        var l = this.searchLabel(name);
-        if(l) {
-            if(l.value === undefined) {
-                if(l.mode === "fast") {
-                    return 0x80;
-                } else {
-                    return 0x8000;
-                }
-            } else {
-                return l.value;
-            }
-        } else {
-            return undefined;
-        }
+        return this.resolveLabel(name);
     }
 
     return undefined;
@@ -898,7 +894,11 @@ Assembler.prototype.keyword_out = function() {
             break;
     }
 
-    var value = this.expectImmediateValue();
+    var value;
+    value = this.consumeLabel();
+    if(value === undefined) {
+        value = this.expectImmediateValue();
+    }
     for(var i = 0; i < length; ++i) {
         this.write(value & 0xff);
         value = value >>> 8;
