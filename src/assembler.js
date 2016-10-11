@@ -1117,7 +1117,20 @@ Assembler.prototype.keyword_skipto = function() {
     }
 
     var toSkip = address - this.origin;
+    if(toSkip === 0) {
+        return true;
+    }
+    
+    console.log(this.origin, address, toSkip);
     this.prgrom.seek(toSkip);
+    this.origin += toSkip;
+    this.prgSegmentLength += toSkip;
+    if(this.origin > 0x10000) {
+        this.error("Origin overflow");
+    }
+    if(this.prgSegmentLength > this.prgSegmentMax) {
+        this.error("Code segment overflow");
+    }
 
     return true;
 };
