@@ -1,6 +1,7 @@
+#!/usr/bin/env node
 var fs = require("fs"),
     path = require("path"),
-    Assembler = require("./src/assembler");
+    Assembler = require("../src/assembler");
 
 var argv = require("yargs")
     .usage("Usage: $0 [options] input_file")
