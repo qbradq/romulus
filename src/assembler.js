@@ -1009,7 +1009,7 @@ Assembler.prototype.keyword_prgbank = function() {
     }
 
     this.segment = "PRG";
-    this.prgrom.seek(0x4000 * bank);
+    this.prgrom.seekSet(0x4000 * bank);
 
     return true;
 };
@@ -1025,7 +1025,7 @@ Assembler.prototype.keyword_prgofs = function() {
     }
 
     this.segment = "PRG";
-    this.prgrom.seek(ofs);
+    this.prgrom.seekSet(ofs);
 
     return true;
 };
@@ -1041,7 +1041,7 @@ Assembler.prototype.keyword_chrbank = function() {
     }
 
     this.segment = "CHR";
-    this.chrrom.seek(0x2000 * bank);
+    this.chrrom.seekSet(0x2000 * bank);
 
     return true;
 };
@@ -1057,7 +1057,7 @@ Assembler.prototype.keyword_chrofs = function() {
     }
 
     this.segment = "CHR";
-    this.chrrom.seek(ofs);
+    this.chrrom.seekSet(ofs);
 
     return true;
 };
@@ -1117,11 +1117,6 @@ Assembler.prototype.keyword_skipto = function() {
     }
 
     var toSkip = address - this.origin;
-    if(toSkip === 0) {
-        return true;
-    }
-    
-    console.log(this.origin, address, toSkip);
     this.prgrom.seek(toSkip);
     this.origin += toSkip;
     this.prgSegmentLength += toSkip;

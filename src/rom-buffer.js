@@ -21,6 +21,10 @@ RomBuffer.prototype.reset = function() {
 };
 
 RomBuffer.prototype.seek = function(ofs) {
+    this.ofs += ofs;
+}
+
+RomBuffer.prototype.seekSet = function(ofs) {
     this.ofs = ofs;
 }
 
