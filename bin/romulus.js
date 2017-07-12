@@ -11,7 +11,7 @@ var argv = require("yargs")
     .describe("list-pcbs", "List all built-in PCB macros")
     .help("h")
     .alias("h", "help")
-    .epilog("Copyright (C) 2016 Norman B. Lancaster\nRelease under the terms of the MIT License")
+    .epilog("Copyright (C) 2016 Norman B. Lancaster\nReleased under the terms of the MIT License")
     .argv;
 
 if(argv["list-pcbs"]) {
